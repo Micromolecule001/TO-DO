@@ -1,9 +1,12 @@
-#pragma once
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
 #include <QMainWindow>
-#include <QListWidget>
-#include <QPushButton>
 #include <QLineEdit>
-#include "taskmanager.h"
+#include <QTextEdit>
+#include <QPushButton>
+#include <QListWidget>
+#include "notemanager.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -12,16 +15,15 @@ public:
     MainWindow(QWidget *parent = nullptr);
 
 private slots:
-    void addTask();
-    void toggleTaskStatus(QListWidgetItem* item);
+    void saveNote();
+    void openNoteEditWindow(QListWidgetItem *item);
 
 private:
-    TaskManager manager;
-
-    QLineEdit* inputField;
-    QPushButton* addButton;
-    QListWidget* listWidget;
-
-    void refreshTaskList();
+    QLineEdit *inputTitle;
+    QTextEdit *inputText;
+    QPushButton *saveButton;
+    QListWidget *noteList;
+    NoteManager *noteManager;
 };
 
+#endif // MAINWINDOW_H

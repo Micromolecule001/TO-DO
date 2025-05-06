@@ -1,57 +1,64 @@
 #include "mainwindow.h"
 #include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QWidget>
+#include "notewindow.h"
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-{
-    QWidget* central = new QWidget(this);
-    QVBoxLayout* layout = new QVBoxLayout(central);
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
+    // Create central widget and layout
+    QWidget *centralWidget = new QWidget(this);
+    setCentralWidget(centralWidget);
+    
+    QHBoxLayout *mainWindowLayout = new QHBoxLayout(centralWidget);
+    QVBoxLayout *noteSaveLayout = new QVBoxLayout();
+    QVBoxLayout *noteListLayout = new QVBoxLayout();    // Initialize UI components
 
-    QHBoxLayout* inputLayout = new QHBoxLayout();
+    inputTitle = new QLineEdit(this);
+    inputTitle->setPlaceholderText("Note Title");
+    inputText = new QTextEdit(this);
+    inputText->setPlaceholderText("note text");
+    saveButton = new QPushButton("Save Note", this);
+    noteList = new QListWidget(this);
 
-    inputField = new QLineEdit(this);
-    inputField->setPlaceholderText("Enter task...");
-    addButton = new QPushButton("Add", this);
-    inputLayout->addWidget(inputField);
-    inputLayout->addWidget(addButton);
+    // Add components to layout
+    noteSaveLayout->addWidget(inputTitle);
+    noteSaveLayout->addWidget(inputText);
+    noteSaveLayout->addWidget(saveButton);
 
-    listWidget = new QListWidget(this);
+    noteListLayout->addWidget(noteList);
 
-    layout->addLayout(inputLayout);
-    layout->addWidget(listWidget);
+    mainWindowLayout->addLayout(noteSaveLayout);
+    mainWindowLayout->addLayout(noteListLayout);
 
-    connect(addButton, &QPushButton::clicked, this, &MainWindow::addTask);
-    connect(listWidget, &QListWidget::itemClicked, this, &MainWindow::toggleTaskStatus);
+    // Initialize note manager
+    noteManager = new NoteManager();
 
-    setCentralWidget(central);
-    setWindowTitle("To-Do List");
-    resize(400, 300);
+    // Connect signals to slots
+    connect(saveButton, &QPushButton::clicked, this, &MainWindow::saveNote);
+    connect(noteList, &QListWidget::itemDoubleClicked, this, &MainWindow::openNoteEditWindow);
+
+    // Set window properties
+    setWindowTitle("Note App");
+    resize(400, 500);
 }
 
-void MainWindow::addTask() {
-    QString text = inputField->text();
-    if (!text.isEmpty()) {
-        Task task(text);
-        manager.addTask(task);
-        inputField->clear();
-        refreshTaskList();
+void MainWindow::saveNote() {
+    QString title = inputTitle->text().trimmed();
+    QString text = inputText->toPlainText().trimmed();
+    if (!title.isEmpty() && !text.isEmpty()) {
+        noteManager->addNote(title, text);
+        noteList->addItem(title);
+        inputTitle->clear();
+        inputText->clear();
     }
 }
 
-void MainWindow::toggleTaskStatus(QListWidgetItem* item) {
-    int index = listWidget->row(item);
-    manager.toggleCompleted(index);
-    refreshTaskList();
+void MainWindow::openNoteEditWindow(QListWidgetItem *item) {
+    int index = noteList->row(item);
+    Note note = noteManager->getNote(index);
+    NoteWindow *noteWindow = new NoteWindow(index, note.getTitle(), note.getText(), this);
+    connect(noteWindow, &NoteWindow::noteUpdated, this, [=](int idx, const QString &newTitle, const QString &newText) {
+        noteManager->updateNote(idx, newTitle, newText);
+        noteList->item(idx)->setText(newTitle);
+    });
+    noteWindow->exec();
 }
-
-void MainWindow::refreshTaskList() {
-    listWidget->clear();
-    const auto& tasks = manager.getTasks();
-    for (const Task& task : tasks) {
-        QString display = task.completed ? "[✔] " : "[ ] ";
-        display += task.text;
-        listWidget->addItem(display);
-    }
-}
-

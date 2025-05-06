@@ -1,7 +1,5 @@
 #!/bin/bash
-mkdir -p build
 cd build
-qmake ../ToDO-list.pro
+qmake ../NoteApp.pro
 make
-./ToDO-list
-
+./NoteApp
